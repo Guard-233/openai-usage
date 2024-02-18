@@ -1,0 +1,82 @@
+[
+  {
+    "usage_type": "text",
+    "model": "gpt-4-1106-preview",
+    "training": 0.01,
+    "input": 0.01,
+    "output": 0.03
+  },
+  {
+    "usage_type": "text",
+    "model": "gpt-4-1106-vision-preview",
+    "training": 0.01,
+    "input": 0.01,
+    "output": 0.03
+  },
+  {
+    "usage_type": "tts",
+    "price": 0.015,
+    "model": "TTS"
+  },
+  {
+    "usage_type": "tts",
+    "price": 0.03,
+    "model": "TTS HD"
+  },
+  {
+    "usage_type": "dalle",
+    "resolution": "1024x1024",
+    "model": "DALL·E 3",
+    "price": 0.04,
+    "quality": "Standard"
+  },
+  {
+    "usage_type": "dalle",
+    "resolution": "1024x1792, 1792x1024",
+    "model": "DALL·E 3",
+    "price": 0.08,
+    "quality": "Standard"
+  },
+  {
+    "usage_type": "dalle",
+    "resolution": "1024x1024",
+    "model": "DALL·E 3",
+    "price": 0.08,
+    "quality": "HD"
+  },
+  {
+    "usage_type": "dalle",
+    "resolution": "1024x1792, 1792x1024",
+    "model": "DALL·E 3",
+    "price": 0.12,
+    "quality": "HD"
+  },
+  {
+    "usage_type": "text",
+    "model": "gpt-4",
+    "training": 0.03,
+    "input": 0.03,
+    "output": 0.06
+  },
+  {
+    "usage_type": "text",
+    "model": "gpt-4-32k",
+    "training": 0.06,
+    "input": 0.06,
+    "output": 0.12
+  },
+  {
+    "usage_type": "text",
+    "model": "gpt-3.5-turbo",
+    "training": 0.008,
+    "input": 0.003,
+    "output": 0.006
+  },
+  {
+    "usage_type": "text",
+    "model": "davinci-002",
+    "training": 0.006,
+    "input": 0.012,
+    "output": 0.012
+  }
+]
