@@ -1,4 +1,4 @@
-import { Column } from "@ant-design/plots";
+import { Bar, Column } from "@ant-design/plots";
 import usages from "../../activity-2024-02-01-2024-03-01.json";
 import { groupedByOfUser, showUsageByDay } from "@/utils";
 import { UsageUpload } from "@/components/usageUpload";
@@ -58,13 +58,13 @@ export default function HomePage() {
             stack
             data={showUsageByDay(usageJson!)}
           ></Column>
-          <Column
+          <Bar
             xField="user"
             colorField={"model"}
             yField={"price"}
             stack
             data={groupedByOfUser(showUsageByDay(usageJson!))}
-          ></Column>
+          ></Bar>
         </div>
       )}
     </div>

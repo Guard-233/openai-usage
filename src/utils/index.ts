@@ -50,7 +50,9 @@ export const showUsageByDay = (usages: Usage[]) => {
 
       return {
         ...usage,
-        price: promptTokensCostUsdDollar + completionTokensCostUsdDollar,
+        price: Number(
+          (promptTokensCostUsdDollar + completionTokensCostUsdDollar).toFixed(4)
+        ),
       };
     })
   )(usages);
@@ -61,24 +63,47 @@ const pricePre = (usage: Usage) => {
     case "tts":
       return usage;
     case "dalle":
-      let model = usage.model;
-      if (usage.model === "dall-e-3") {
-        model = `standard/${usage.image_size?.replace("x", "-x-")}/${usage.model}`;
-      } else if (usage.model === "dall-e-2") {
-        model = `${usage.image_size?.replace("x", "-x-")}/${usage.model}`;
-      }
-
       return {
         ...usage,
-        model,
+        model: dalleModelName(usage),
         n_context_tokens_total:
-          new Function(
-            `return ${usage.image_size?.replace("x", "*") || "0"}`
-          )() * defaultTo(usage.num_images, 1),
+          imageTokens(usage) * defaultTo(usage.num_images, 1),
       };
 
     default:
       return usage;
+  }
+};
+
+const dalleModelName = (usage: Usage) => {
+  if (usage.usage_type === "dalle") {
+    if (usage.model === "dall-e-3") {
+      return `standard/${imageSizeReplace(usage.image_size)}/${usage.model}`;
+    } else if (usage.model === "dall-e-2") {
+      return `${imageSizeReplace(usage.image_size)}/${usage.model}`;
+    }
+  }
+
+  return usage;
+};
+
+const imageSizeReplace = (imageSize?: string) => {
+  return imageSize?.replace("x", "-x-");
+};
+
+const imageTokens = (usage: Usage) => {
+  switch (usage.image_size) {
+    case "256x256":
+      return 256 * 256;
+    case "512x512":
+      return 512 * 512;
+    case "1024x1024":
+      return 1024 * 1024;
+    case "1024x1792":
+    case "1792x1024":
+      return 1024 * 1792;
+    default:
+      return 0;
   }
 };
 
@@ -117,7 +142,9 @@ export const groupedByOfUser = (usages: Usage[]) => {
           n_generated_tokens_total:
             defaultTo0(acc?.n_generated_tokens_total) +
             defaultTo0(item?.n_generated_tokens_total),
-          price: defaultTo0(acc.price) + defaultTo0(item.price),
+          price: Number(
+            (defaultTo0(acc.price) + defaultTo0(item.price)).toFixed(4)
+          ),
         }),
         {} as unknown as Usage
       );
