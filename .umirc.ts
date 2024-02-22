@@ -5,4 +5,5 @@ export default defineConfig({
   npmClient: "pnpm",
   tailwindcss: {},
   plugins: ["@umijs/plugins/dist/tailwindcss"],
+  devtool: "source-map",
 });
