@@ -13,6 +13,16 @@ function modelPricingByTokens(
   );
 }
 
+function modelPricingByPixel(
+  modelCostRef: Record<modeName, any>,
+  model: modeName
+) {
+  return (
+    not(isNil(modelCostRef[model].input_cost_per_pixel)) &&
+    not(isNil(modelCostRef[model].output_cost_per_pixel))
+  );
+}
+
 function modelPricingBySecond(
   modelCostRef: Record<modeName, any>,
   model: modeName,
@@ -25,13 +35,17 @@ function modelPricingBySecond(
 }
 
 export function costPerToken(
-  model: modeName,
+  model?: modeName,
   promptTokens = 0,
   completionTokens = 0,
   responseTimeMs = null,
   customLlmProvider = null,
   regionName = null
 ) {
+  if (isNil(model)) {
+    return [0, 0];
+  }
+
   let promptTokensCostUsdDollar = 0;
   let completionTokensCostUsdDollar = 0;
   let modelCostRef: Record<modeName, any> = modelCost;
@@ -61,6 +75,12 @@ export function costPerToken(
 
     completionTokensCostUsdDollar =
       modelCostRef[model].output_cost_per_token * completionTokens;
+  } else if (modelPricingByPixel(modelCostRef, model)) {
+    promptTokensCostUsdDollar =
+      modelCostRef[model].input_cost_per_pixel * promptTokens;
+
+    completionTokensCostUsdDollar =
+      modelCostRef[model].output_cost_per_pixel * completionTokens;
   } else if (modelPricingBySecond(modelCostRef, model, responseTimeMs)) {
     promptTokensCostUsdDollar =
       (modelCostRef[model].input_cost_per_second * responseTimeMs) / 1000;

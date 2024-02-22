@@ -3,6 +3,9 @@ export type Usage = {
    * 组织ID
    */
   organization_id?: string;
+  organization_name: string;
+  image_size?: string;
+  num_images?: number;
   /**
    * 请求次数
    */
@@ -36,6 +39,7 @@ export type Usage = {
    * 用户ID
    */
   user: string;
+  price?: number;
 };
 
 export type Pricing =

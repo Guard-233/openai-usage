@@ -1,6 +1,6 @@
 import { Column } from "@ant-design/plots";
 import usages from "../../activity-2024-02-01-2024-03-01.json";
-import { groupedByModel, showUsageByDay } from "@/utils";
+import { groupedByOfUser, showUsageByDay } from "@/utils";
 import { UsageUpload } from "@/components/usageUpload";
 import { useState } from "react";
 import { Usage } from "@/types/type";
@@ -25,7 +25,7 @@ export default function HomePage() {
   console.log(
     "%c [ groupedByModel(showUsageByDay(usageJson!)) ]-26",
     "font-size:13px; background:#aad9a8; color:#eeffec;",
-    groupedByModel(showUsageByDay(usageJson!))
+    groupedByOfUser(showUsageByDay(usageJson!))
   );
 
   return (
@@ -63,7 +63,7 @@ export default function HomePage() {
             colorField={"model"}
             yField={"price"}
             stack
-            data={groupedByModel(showUsageByDay(usageJson!))}
+            data={groupedByOfUser(showUsageByDay(usageJson!))}
           ></Column>
         </div>
       )}

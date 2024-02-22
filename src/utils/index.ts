@@ -1,4 +1,5 @@
 import {
+  defaultTo,
   evolve,
   groupBy,
   isNil,
@@ -31,27 +32,54 @@ export const showUsageByDay = (usages: Usage[]) => {
           new Date(timestamp).toLocaleDateString(),
       })
     ),
-    map((e) => {
+    map(pricePre),
+    map((usage) => {
+      if (usage.usage_type === "dalle") {
+        console.log(
+          "%c [ usage ]-39",
+          "font-size:13px; background:#9749ef; color:#db8dff;",
+          usage
+        );
+      }
+      const [promptTokensCostUsdDollar, completionTokensCostUsdDollar] =
+        costPerToken(
+          usage.model,
+          usage.n_context_tokens_total,
+          usage.n_generated_tokens_total
+        );
+
       return {
-        ...e,
-        price:
-          isNotNil(e.model) &&
-          isNotNil(e.n_context_tokens_total) &&
-          isNotNil(e.n_generated_tokens_total)
-            ? costPerToken(
-                e.model,
-                e.n_context_tokens_total,
-                e.n_generated_tokens_total
-              )[0] +
-              costPerToken(
-                e.model,
-                e.n_context_tokens_total,
-                e.n_generated_tokens_total
-              )[1]
-            : 0,
+        ...usage,
+        price: promptTokensCostUsdDollar + completionTokensCostUsdDollar,
       };
     })
   )(usages);
+};
+
+const pricePre = (usage: Usage) => {
+  switch (usage.usage_type) {
+    case "tts":
+      return usage;
+    case "dalle":
+      let model = usage.model;
+      if (usage.model === "dall-e-3") {
+        model = `standard/${usage.image_size?.replace("x", "-x-")}/${usage.model}`;
+      } else if (usage.model === "dall-e-2") {
+        model = `${usage.image_size?.replace("x", "-x-")}/${usage.model}`;
+      }
+
+      return {
+        ...usage,
+        model,
+        n_context_tokens_total:
+          new Function(
+            `return ${usage.image_size?.replace("x", "*") || "0"}`
+          )() * defaultTo(usage.num_images, 1),
+      };
+
+    default:
+      return usage;
+  }
 };
 
 export const showPriceByDay = (usages: Usage[]) => {
@@ -66,29 +94,33 @@ export const showPriceByDay = (usages: Usage[]) => {
   )(usages);
 };
 
-export const groupedByModel = (usages: Usage[]) => {
-  return values(
-    map((group: any[]) => {
+export const groupedByOfUser = (usages: Usage[]) => {
+  const defaultTo0 = defaultTo(0);
+
+  const groupByOfModelAndUserName = (usages: Usage[]) =>
+    groupBy((item: Usage) => `${item.model || ""}-${item.user}`)(usages);
+
+  return pipe(
+    groupByOfModelAndUserName,
+    values,
+    map((group: Array<Usage> | undefined) => {
+      if (isNil(group)) {
+        return undefined;
+      }
+
       return group.reduce(
-        (acc: any, item: any) => ({
+        (acc, item) => ({
           ...item,
-          organization_name: item.organization_name,
           n_context_tokens_total:
-            acc.n_context_tokens_total + item.n_context_tokens_total,
+            defaultTo0(acc?.n_context_tokens_total) +
+            defaultTo0(item?.n_context_tokens_total),
           n_generated_tokens_total:
-            acc.n_generated_tokens_total + item.n_generated_tokens_total,
-          price:
-            (isNaN(acc.price) ? 0 : acc.price) +
-            (isNaN(item.price) ? 0 : item.price),
-          model: item.model,
+            defaultTo0(acc?.n_generated_tokens_total) +
+            defaultTo0(item?.n_generated_tokens_total),
+          price: defaultTo0(acc.price) + defaultTo0(item.price),
         }),
-        {
-          organization_name: "",
-          n_context_tokens_total: 0,
-          n_generated_tokens_total: 0,
-          model: "",
-        }
+        {} as unknown as Usage
       );
-    })(groupBy((item) => `${item.model}-${item.user}`, usages))
-  );
+    })
+  )(usages);
 };
