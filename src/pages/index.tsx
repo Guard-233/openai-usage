@@ -1,31 +1,59 @@
-import { Bar, Column } from "@ant-design/plots";
+import { Bar, Column, Line } from "@ant-design/plots";
 import usages from "../../activity-2024-02-01-2024-03-01.json";
-import { groupedByOfUser, showUsageByDay } from "@/utils";
+import {
+  allModels,
+  allUsers,
+  groupByOfModelAndUserTimestamp,
+  groupedByOfUser,
+  showUsageByDay,
+} from "@/utils";
 import { UsageUpload } from "@/components/usageUpload";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Usage } from "@/types/type";
-import { isEmpty } from "ramda";
-import { Empty } from "antd";
+import { divide, filter, isEmpty } from "ramda";
+import { Empty, Radio, Switch } from "antd";
 import i18next from "i18next";
 import { costPerToken } from "@/utils/cost";
 import { useLocalStorageState } from "ahooks";
+import useUrlState from "@ahooksjs/use-url-state";
+
+const YFiled = [
+  "price",
+  "n_context_tokens_total",
+  "n_generated_tokens_total",
+  "num_requests",
+];
+
+const ColorField = ["model", "user"];
 
 export default function HomePage() {
   const [usageJson, setUsageJson] = useLocalStorageState<Usage[]>("usages", {
     defaultValue: [],
   });
 
-  const price = costPerToken("gpt-3.5-turbo-0125", 1515, 892);
+  const [yField, setYField] = useLocalStorageState("yFiled", {
+    defaultValue: YFiled[0],
+  });
 
-  console.log(
-    "%c [ price ]-16",
-    "font-size:13px; background:#068e22; color:#4ad266;",
-    price
+  const [colorField, setColorField] = useLocalStorageState("colorFiled", {
+    defaultValue: ColorField[0],
+  });
+
+  const users = useMemo(
+    () => allUsers(showUsageByDay(usageJson!)),
+    [usageJson]
   );
+
+  const [currentUser, setCurrentUser] = useUrlState({ user: users[0] });
   console.log(
-    "%c [ groupedByModel(showUsageByDay(usageJson!)) ]-26",
-    "font-size:13px; background:#aad9a8; color:#eeffec;",
-    groupedByOfUser(showUsageByDay(usageJson!))
+    "%c [ currentUser ]-48",
+    "font-size:13px; background:#4d11ae; color:#9155f2;",
+    currentUser
+  );
+
+  const models = useMemo(
+    () => allModels(showUsageByDay(usageJson!)),
+    [usageJson]
   );
 
   return (
@@ -51,20 +79,119 @@ export default function HomePage() {
         </Empty>
       ) : (
         <div>
+          <div>{i18next.t("分组字段")}</div>
+          <Radio.Group
+            value={yField}
+            onChange={(e) => setYField(e.target.value)}
+          >
+            {YFiled.map((item, index) => {
+              return <Radio.Button value={item}>{item}</Radio.Button>;
+            })}
+          </Radio.Group>
+          <div>{i18next.t("用户字段")}</div>
+          <Radio.Group
+            value={colorField}
+            onChange={(e) => setColorField(e.target.value)}
+          >
+            {ColorField.map((item) => {
+              return <Radio.Button value={item}>{item}</Radio.Button>;
+            })}
+          </Radio.Group>
           <Column
             xField="timestamp"
-            colorField={"model"}
-            yField={"price"}
+            colorField={colorField}
+            yField={yField}
             stack
-            data={showUsageByDay(usageJson!)}
+            interaction={{
+              tooltip: {
+                render(
+                  _: any,
+                  options: {
+                    title: string;
+                    items: {
+                      name?: string;
+                      color?: string;
+                      value?: any;
+                    }[];
+                  }
+                ) {
+                  return (
+                    <div>
+                      <div>
+                        {options.title}{" "}
+                        {options.items.reduce((pre, now) => {
+                          return pre + now.value;
+                        }, 0)}
+                      </div>
+                      {options.items.map((item) => {
+                        return (
+                          <div className="flex justify-between">
+                            <div>{item.name}:</div>
+                            <div className="pl-2">{item.value}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                },
+              },
+            }}
+            data={
+              colorField === "user"
+                ? groupedByOfUser(
+                    showUsageByDay(usageJson!),
+                    groupByOfModelAndUserTimestamp
+                  )
+                : showUsageByDay(usageJson!)
+            }
           ></Column>
           <Bar
             xField="user"
             colorField={"model"}
-            yField={"price"}
+            yField={yField}
             stack
             data={groupedByOfUser(showUsageByDay(usageJson!))}
           ></Bar>
+          <div>{i18next.t("单用户用量")}</div>
+          <Radio.Group
+            value={currentUser.user}
+            onChange={(e) =>
+              setCurrentUser({
+                user: e.target.value,
+              })
+            }
+          >
+            {users.map((item) => {
+              return <Radio.Button value={item}>{item}</Radio.Button>;
+            })}
+          </Radio.Group>
+          <Column
+            xField="timestamp"
+            colorField={"model"}
+            yField={yField}
+            stack
+            data={filter((item: Usage) => {
+              return item.user === currentUser.user;
+            })(showUsageByDay(usageJson!))}
+          ></Column>
+
+          <div>单模型用量</div>
+          <div className="flex flex-wrap">
+            {models.map((model) => {
+              return (
+                <div className="w-1/3">
+                  <div>{model}</div>
+                  <Line
+                    xField="timestamp"
+                    yField={yField}
+                    data={filter((item: Usage) => {
+                      return item.model === model;
+                    })(showUsageByDay(usageJson!))}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

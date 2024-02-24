@@ -1,9 +1,11 @@
 import {
+  curry,
   defaultTo,
   evolve,
   groupBy,
   isNil,
   isNotNil,
+  keys,
   lensProp,
   map,
   not,
@@ -23,7 +25,7 @@ export const fixTimestamp = (usages: Usage[]) =>
     })
   )(usages);
 
-export const showUsageByDay = (usages: Usage[]) => {
+export const showUsageByDay = (usages: Usage[]): Usage[] => {
   return pipe(
     fixTimestamp,
     map(
@@ -119,35 +121,58 @@ export const showPriceByDay = (usages: Usage[]) => {
   )(usages);
 };
 
-export const groupedByOfUser = (usages: Usage[]) => {
-  const defaultTo0 = defaultTo(0);
+export const groupByOfModelAndUserName = (usages: Usage[]) =>
+  groupBy((item: Usage) => `${item.model || ""}-${item.user}`)(usages);
 
-  const groupByOfModelAndUserName = (usages: Usage[]) =>
-    groupBy((item: Usage) => `${item.model || ""}-${item.user}`)(usages);
+export const groupByOfModelAndUserTimestamp = (usages: Usage[]) =>
+  groupBy((item: Usage) => `${item.timestamp || ""}-${item.user}`)(usages);
 
-  return pipe(
-    groupByOfModelAndUserName,
-    values,
-    map((group: Array<Usage> | undefined) => {
-      if (isNil(group)) {
-        return undefined;
-      }
+export const groupByOfModelTimestamp = (usages: Usage[]) =>
+  groupBy((item: Usage) => `${item.timestamp || ""}`)(usages);
 
-      return group.reduce(
-        (acc, item) => ({
-          ...item,
-          n_context_tokens_total:
-            defaultTo0(acc?.n_context_tokens_total) +
-            defaultTo0(item?.n_context_tokens_total),
-          n_generated_tokens_total:
-            defaultTo0(acc?.n_generated_tokens_total) +
-            defaultTo0(item?.n_generated_tokens_total),
-          price: Number(
-            (defaultTo0(acc.price) + defaultTo0(item.price)).toFixed(4)
-          ),
-        }),
-        {} as unknown as Usage
-      );
-    })
-  )(usages);
+export const groupedByOfUser = curry(
+  (
+    usages: Usage[],
+    groupByFn: (
+      usages: Usage[]
+    ) => Partial<
+      Record<`${string}-${string}`, Usage[]>
+    > = groupByOfModelAndUserName
+  ) => {
+    const defaultTo0 = defaultTo(0);
+
+    return pipe(
+      groupByFn,
+      values,
+      map((group: Array<Usage> | undefined) => {
+        if (isNil(group)) {
+          return undefined;
+        }
+
+        return group.reduce(
+          (acc, item) => ({
+            ...item,
+            n_context_tokens_total:
+              defaultTo0(acc?.n_context_tokens_total) +
+              defaultTo0(item?.n_context_tokens_total),
+            n_generated_tokens_total:
+              defaultTo0(acc?.n_generated_tokens_total) +
+              defaultTo0(item?.n_generated_tokens_total),
+            price: Number(
+              (defaultTo0(acc.price) + defaultTo0(item.price)).toFixed(4)
+            ),
+          }),
+          {} as unknown as Usage
+        );
+      })
+    )(usages);
+  }
+);
+
+export const allModels = (usages: Usage[]) => {
+  return keys(groupBy((e) => e.model!, usages));
+};
+
+export const allUsers = (usages: Usage[]) => {
+  return keys(groupBy((e) => e.user!, usages));
 };
