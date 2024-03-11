@@ -6,4 +6,5 @@ export default defineConfig({
   tailwindcss: {},
   plugins: ["@umijs/plugins/dist/tailwindcss"],
   devtool: "source-map",
+  outputPath: "docs",
 });

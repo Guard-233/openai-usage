@@ -4,6 +4,7 @@ import {
   allModels,
   allUsers,
   groupByOfModelAndUserTimestamp,
+  groupByOfModelTimestamp,
   groupedByOfUser,
   showUsageByDay,
 } from "@/utils";
@@ -184,9 +185,12 @@ export default function HomePage() {
                   <Line
                     xField="timestamp"
                     yField={yField}
-                    data={filter((item: Usage) => {
-                      return item.model === model;
-                    })(showUsageByDay(usageJson!))}
+                    data={groupedByOfUser(
+                      filter((item: Usage) => {
+                        return item.model === model;
+                      })(showUsageByDay(usageJson!)),
+                      groupByOfModelTimestamp
+                    )}
                   />
                 </div>
               );

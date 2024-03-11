@@ -4,15 +4,9 @@ import {
   evolve,
   groupBy,
   isNil,
-  isNotNil,
   keys,
-  lensProp,
   map,
-  not,
-  over,
   pipe,
-  prop,
-  reduce,
   values,
 } from "ramda";
 import { Usage } from "../types/type";
@@ -36,13 +30,6 @@ export const showUsageByDay = (usages: Usage[]): Usage[] => {
     ),
     map(pricePre),
     map((usage) => {
-      if (usage.usage_type === "dalle") {
-        console.log(
-          "%c [ usage ]-39",
-          "font-size:13px; background:#9749ef; color:#db8dff;",
-          usage
-        );
-      }
       const [promptTokensCostUsdDollar, completionTokensCostUsdDollar] =
         costPerToken(
           usage.model,
@@ -69,7 +56,7 @@ const pricePre = (usage: Usage) => {
         ...usage,
         model: dalleModelName(usage),
         n_context_tokens_total:
-          imageTokens(usage) * defaultTo(usage.num_images, 1),
+          imageTokens(usage) * defaultTo(1, usage.num_images),
       };
 
     default:
