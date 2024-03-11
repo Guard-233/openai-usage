@@ -24,6 +24,6 @@ jobs:
 
     - name: Build
       run: |
-        npm i pnpm
+        npm i pnpm -g
         pnpm install
         pnpm build
